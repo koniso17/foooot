@@ -6,15 +6,17 @@ interface TournamentConfig {
   matchDuration: number;
   breakDuration: number;
   teamNames: string[];
+  repeatMatches: number;
 }
 
 const TournamentSetup: React.FC = () => {
   const navigate = useNavigate();
   const [config, setConfig] = useState<TournamentConfig>({
     teamCount: 4,
-    matchDuration: 20,
-    breakDuration: 5,
+    matchDuration: 600,  // 10分（600秒）
+    breakDuration: 300,  // 5分（300秒）
     teamNames: Array(6).fill('').map((_, i) => `チーム${i + 1}`),
+    repeatMatches: 1,
   });
 
   const handleTeamCountChange = (count: number) => {
@@ -75,24 +77,37 @@ const TournamentSetup: React.FC = () => {
 
         <div className="mb-4">
           <label className="block text-gray-700 mb-2">
-            試合時間（秒）
+            試合時間（分）
             <input
               type="number"
               min="1"
-              value={config.matchDuration}
-              onChange={(e) => setConfig({ ...config, matchDuration: parseInt(e.target.value) })}
+              value={config.matchDuration / 60}
+              onChange={(e) => setConfig({ ...config, matchDuration: parseInt(e.target.value) * 60 })}
               className="w-full p-2 border rounded"
             />
           </label>
         </div>
         <div className="mb-4">
           <label className="block text-gray-700 mb-2">
-            休憩時間（秒）
+            休憩時間（分）
             <input
               type="number"
               min="1"
-              value={config.breakDuration}
-              onChange={(e) => setConfig({ ...config, breakDuration: parseInt(e.target.value) })}
+              value={config.breakDuration / 60}
+              onChange={(e) => setConfig({ ...config, breakDuration: parseInt(e.target.value) * 60 })}
+              className="w-full p-2 border rounded"
+            />
+          </label>
+        </div>
+        <div className="mb-4">
+          <label className="block text-gray-700 mb-2">
+            試合の繰り返し回数（1-3回）
+            <input
+              type="number"
+              min="1"
+              max="3"
+              value={config.repeatMatches}
+              onChange={(e) => setConfig({ ...config, repeatMatches: parseInt(e.target.value) })}
               className="w-full p-2 border rounded"
             />
           </label>

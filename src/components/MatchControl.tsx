@@ -52,19 +52,16 @@ const MatchControl: React.FC = () => {
     const teamCount = teams.length;
     
     // 基本的な組み合わせを生成
-    for (let i = 0; i < teamCount; i++) {
-      for (let j = i + 1; j < teamCount; j++) {
-        matches.push({
-          homeTeam: teams[i],
-          awayTeam: teams[j]
-        });
+    for (let r = 0; r < repeatCount; r++) {
+      for (let i = 0; i < teamCount; i++) {
+        for (let j = i + 1; j < teamCount; j++) {
+          // r が偶数の場合は通常の組み合わせ、奇数の場合はホームとアウェイを入れ替え
+          matches.push({
+            homeTeam: r % 2 === 0 ? teams[i] : teams[j],
+            awayTeam: r % 2 === 0 ? teams[j] : teams[i]
+          });
+        }
       }
-    }
-
-    // 繰り返し回数分の組み合わせを追加
-    const baseMatches = [...matches];
-    for (let r = 1; r < repeatCount; r++) {
-      matches.push(...baseMatches);
     }
 
     // 連戦を避けるための最適化
@@ -112,7 +109,7 @@ const MatchControl: React.FC = () => {
     timeLeft: config.matchDuration,
     isBreak: false,
     currentMatch: 1,
-    totalMatches: (config.teamCount * (config.teamCount - 1) * config.repeatMatches) / 2,
+    totalMatches: (config.teamCount * (config.teamCount - 1) / 2) * config.repeatMatches,
     homeScore: 0,
     awayScore: 0,
     homeTeam: config.teamNames[0] || 'ホーム',
@@ -140,11 +137,6 @@ const MatchControl: React.FC = () => {
       homeTeam: match.homeTeam,
       awayTeam: match.awayTeam,
     }));
-  });
-
-  const [matchResults, setMatchResults] = useState<MatchResult[]>(() => {
-    const savedResults = localStorage.getItem('matchResults');
-    return savedResults ? JSON.parse(savedResults) : [];
   });
 
   const isTournamentComplete = matchState.currentMatch > matchState.totalMatches;
@@ -205,9 +197,7 @@ const MatchControl: React.FC = () => {
     const nextMatch = matchState.currentMatch + 1;
     if (nextMatch > matchState.totalMatches) return null;
 
-    const teams = config.teamNames.slice(0, config.teamCount);
-    const matches = generateMatches(teams, config.repeatMatches);
-    return matches[nextMatch - 1];
+    return matchSchedule.find(match => match.matchNumber === nextMatch);
   };
 
   useEffect(() => {
@@ -251,8 +241,32 @@ const MatchControl: React.FC = () => {
         }
       }
     }
-    return () => clearInterval(timer);
-  }, [matchState.isRunning, matchState.timeLeft, matchState.isBreak, config.breakDuration, config.matchDuration, matchState.currentMatch, isTournamentComplete, config.repeatMatches]);
+
+    return () => {
+      if (timer) {
+        clearInterval(timer);
+      }
+    };
+  }, [
+    matchState.isRunning,
+    matchState.timeLeft,
+    matchState.isBreak,
+    matchState.currentMatch,
+    matchState.homeScore,
+    matchState.awayScore,
+    matchState.homeTeam,
+    matchState.awayTeam,
+    config.breakDuration,
+    config.matchDuration,
+    config.teamCount,
+    config.teamNames,
+    config.repeatMatches,
+    isTournamentComplete,
+    playWhistle,
+    updateTeamStats,
+    saveMatchResult,
+    generateMatches
+  ]);
 
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
